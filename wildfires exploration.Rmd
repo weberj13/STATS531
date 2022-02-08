@@ -1,0 +1,39 @@
+---
+title: "Wildfires Exploration"
+author: "Julia Weber"
+date: "2/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyr)
+```
+
+```{r}
+fires_original <- read.csv("California_Fire_Perimeters_(all).csv")
+summary(fires_original)
+fires_original$ALARM_DATE = as.Date(fires_original$ALARM_DATE) # Convert alarm date to date type
+fires <- fires_original %>% drop_na(ALARM_DATE) # dropped observations with NA for date because we will not know when these fires occurred
+fires <- fires[order(fires$ALARM_DATE),]
+summary(fires$ALARM_DATE) # We see 2 values of year are 0219 and 2106 -> delete these observations
+fires = fires[-1,]
+n<-dim(fires)[1]
+fires<-fires[1:(n-1),]
+fires = fires[fires$YEAR_ > 1969.999,] # Look at data from 1970 to 2020
+summary(fires)
+```
+
+```{r}
+library(data.table)
+library(zoo)
+dt <- as.data.table(fires)
+dt <- dt[, .N, by=.(year(ALARM_DATE), month(ALARM_DATE))] 
+```
+
+```{r}
+counts <- as.data.frame(dt)
+counts$Date <- as.yearmon(paste(counts$year, counts$month), "%Y %m")
+counts
+plot(N~Date,data=counts,type="l", ylab = "Number of wildfires", main="Number of wildfires occurring each month from 1970-2020")
+```
